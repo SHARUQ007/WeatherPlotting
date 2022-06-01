@@ -6,7 +6,7 @@ from datetime import datetime
 
 ###################### function to call weather API ##############################################################
 
-def weatherAPI_call(lat,lon,idn):
+def weatherAPI_call(lat,lon,idn,cust_name):
    # base URL
    BASE_URL = "https://api.openweathermap.org/data/2.5/weather?"
    # City Name CITY = "Hyderabad"
@@ -21,7 +21,7 @@ def weatherAPI_call(lat,lon,idn):
       data = response.json()
       # getting the main dict block
       main = data['main']
-      name = data['name']
+      city = data['name']
       # getting temperature
       temperature = main['temp']
       # getting the humidity
@@ -42,17 +42,18 @@ def weatherAPI_call(lat,lon,idn):
    else:
       # showing the error message
       print("Error in the HTTP request")
-   dictionary ={
+   weather_params ={
     "id": idn,  
-    "latitude" : site['lat'],
-    "longitude" : site['lang'],
-    "city" : name,
+    "latitude" : lat,
+    "longitude" : lon,
+    "name": cust_name,
+    "city" : city,
     "temperature" : temperature,
     "humidity" : humidity,
     "pressure" : pressure,
     "report" : report[0]['description']
    }
-   return dictionary
+   return weather_params
 #####################################################################################################################
 
 ############################################### formatting for json ################################################
@@ -113,29 +114,77 @@ def formatterReact():
 ############################################## main function ########################################################
 
 
-# datetime object containing current date and time
-now = datetime.now()
+# # datetime object containing current date and time
+# now = datetime.now()
  
-# Opening JSON file
-f = open('data.json')  
-# returns JSON object as 
-# a dictionary
-data = json.load(f)
+# # Opening JSON file
+# f = open('data.json')  
+# # returns JSON object as 
+# # a dictionary
+# data = json.load(f)
+# listObj = []
+# #for storing objects
+
+# # Iterating through the json
+# # list
+# for site in data['sites']:
+#    lat=str(site['lat'])
+#    lon=str(site['lang'])
+#    idn= str(site['id'])
+#    # calling the weather API   
+#    dictionary=weatherAPI_call(lat,lon,idn)
+#    # Data to be written 
+#    listObj.append(dictionary)  
+
+
+# write_to_file(listObj,now)
+# formatterReact()
+
+###############################################################################################################
+
+now = datetime.now()
+# base URL
+URL = "http://solarroofs.ap-south-1.elasticbeanstalk.com/api/v1/project/14/sites-latlong/"
+
+
 listObj = []
-#for storing objects
 
-# Iterating through the json
-# list
-for site in data['sites']:
-   lat=str(site['lat'])
-   lon=str(site['lang'])
-   idn= str(site['id'])
-   # calling the weather API   
-   dictionary=weatherAPI_call(lat,lon,idn)
-   # Data to be written 
-   listObj.append(dictionary)  
+# HTTP request
+response = requests.get(URL)
+# checking the status code of the request
+if response.status_code == 200:
+   # getting data in the json format
+   data = response.json()
+   # getting the main dict block
 
+   for site in data["data"]:
+      name=site["name"]
+      lat=str(site['latitude'])
+      lon=str(site['longitude'])
+      idn= str(site['id'])
+      time_stamp=datetime.now()
+      # calling the weather API   
+      weather_params=weatherAPI_call(lat,lon,idn,name)
+      # Data to be written 
+      dictionary={
+         "id": idn,
+         "latitude" : lat,
+         "longitude" : lon,
+         "name": name,
+         "time_stamp":time_stamp,
+         "weather_params" : weather_params
+      }
+      listObj.append(dictionary)  
+else:
+   # showing the error message
+   print("Error in the HTTP request")
+# dictionary ={
+#  "id": idn,  
+#  "latitude" : site['lat'],
+#  "longitude" : site['lang'],
 
+# }
 write_to_file(listObj,now)
 formatterReact()
 
+#####################################################################################################################
